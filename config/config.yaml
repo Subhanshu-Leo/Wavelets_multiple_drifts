@@ -1,0 +1,53 @@
+# Hyperparameters
+wavelets:
+  detection_wavelet: "db4"
+  ensemble_wavelet: "sym4"
+  decomposition_level: 4
+
+ensemble:
+  n_init: 500              # Warm-up window
+  rf_depth: 10
+  rf_n_trees: 100
+  gb_depth: 5
+  gb_n_trees: 100
+  ridge_alpha: 1.0
+
+detection:
+  n_w: 200                 # Window size
+  theta_h: 0.15            # Hoeffding threshold (Layer 1)
+  theta_w: 0.10            # Warning threshold
+  alpha: 0.01              # Significance level
+  b_perm: 1000             # Max permutations
+  b_min: 100               # Min permutations (adaptive)
+
+attribution:
+  granger_lag: 5
+  coherence_threshold: 0.70
+  importance_top_k: 3
+  alpha_granger: 0.05
+
+data_quality:
+  outlier_c_sigma: 2.5
+  outlier_lambda: 1.4
+  noise_spike_threshold: 2.0
+  impute_gap_threshold: 5
+
+retraining:
+  n_buffer: 50             # Post-drift buffer
+  n_val: 50                # Validation size
+  improvement_threshold: 0.10
+  weight_lr: 0.01          # Learning rate
+  weight_reset_val: 0.5    # Reset weight on retrain
+
+evaluation:
+  prequential_window: 100
+  test_alpha: 0.05
+
+detection:
+  n_w: 200
+  theta_h: 0.15
+  theta_w: 0.10
+  alpha: 0.01
+  b_perm: 1000
+  b_min: 100
+  cooldown_samples: 50     # ← add this
