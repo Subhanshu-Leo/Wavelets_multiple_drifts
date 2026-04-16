@@ -11,7 +11,6 @@ from tqdm import tqdm
 from experiments.synthetic_data import SyntheticDriftGenerator
 from experiments.real_data_loader import RealDataExperiment
 from src.pipeline.drift_pipeline import WaveletDriftDetectionPipeline
-from src.detection.layer1_hoeffding import HoeffidngBound
 from src.detection.layer2_permutation import AdaptivePermutationTest
 from utils.metrics import DriftMetrics
 from utils.io import ResultsIO

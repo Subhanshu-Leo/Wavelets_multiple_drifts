@@ -533,15 +533,15 @@ class WaveletDriftDetectionPipeline:
             energy_ratio = rms_new / (rms_hist + 1e-10)
             
             if energy_ratio >= 1.0:
-                mean_score = float(np.clip((energy_ratio - 1.0) / 1.0, 0.0, 1.0))
+                mean_score = float(np.clip((energy_ratio - 1.0) / 4.0, 0.0, 1.0))
             else:
-                mean_score = float(np.clip((1.0 - energy_ratio) / 1.0, 0.0, 1.0))
+                mean_score = float(np.clip((1.0 - energy_ratio) / 0.8, 0.0, 1.0))
 
             # ── Layer 1B: Variance shift ──
             std_hist = np.std(W_hist) + 1e-10
             std_new  = np.std(W_new)  + 1e-10
             log_var_ratio = abs(np.log(std_new / std_hist))
-            var_score = float(np.clip(log_var_ratio / np.log(2.0), 0.0, 1.0))
+            var_score = float(np.clip(log_var_ratio / np.log(10.0), 0.0, 1.0))
 
             # ── Layer 1C: Gradual drift ──
             x = np.arange(len(error_window), dtype=float)
@@ -675,7 +675,8 @@ class WaveletDriftDetectionPipeline:
                 if len(X_train) >= self._min_signal_length:
                     X_dict_train = self._decompose_features(X_train)
                     y_decomp = self.decomposer.decompose(y_train)
-                    y_dict = {j: y_decomp.get(j, np.zeros_like(y_train)) for j in range(J + 1)}
+                    fallback_zeros = np.zeros_like(y_decomp[0]) if 0 in y_decomp else np.zeros_like(y_train)
+                    y_dict = {j: y_decomp.get(j,fallback_zeros) for j in range(J + 1)}
                     self.ensemble.fit(X_dict_train, y_dict, val_size=min(20, split // 3))
                     logger.info("OK Ensemble retrained on post-drift data")
                 else:

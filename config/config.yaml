@@ -1,8 +1,7 @@
-# Hyperparameters
-wavelets:
-  detection_wavelet: "db4"
-  ensemble_wavelet: "sym4"
-  decomposition_level: 4
+# config/config.yaml
+dwt:
+  wavelet: "db4"
+  level: 4
 
 ensemble:
   n_init: 500              
@@ -14,12 +13,14 @@ ensemble:
 
 detection:
   n_w: 200                 
-  theta_h: 0.15            
-  theta_w: 0.10            
   alpha: 0.01              
+  cooldown_samples: 50     
+
+permutation:
   b_perm: 1000             
   b_min: 100               
-  cooldown_samples: 50     # <-- Merged perfectly
+  early_stop_low: 0.001
+  early_stop_high: 0.20
 
 attribution:
   granger_lag: 5

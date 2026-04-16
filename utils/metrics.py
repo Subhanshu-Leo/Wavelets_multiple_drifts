@@ -4,6 +4,7 @@ Evaluation metrics for drift detection.
 
 import numpy as np
 from scipy import stats
+from typing import List, Dict
 
 class DriftMetrics:
     """Compute drift detection evaluation metrics."""

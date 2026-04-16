@@ -35,10 +35,9 @@ class TestCoherence:
         error = 0.9 * feature + 0.1*np.random.randn(500)
         
         coherence_analyzer = WaveletCoherence()
-        passes, coh_val = coherence_analyzer.compute(
-            feature, error, scale_idx=2, threshold=0.5
-        )
-        assert 0 <= coh_val <= 1
+        coh_matrix, scales = coherence_analyzer.compute(feature, error)
+        assert coh_matrix is not None
+        assert np.max(coh_matrix) > 0
     
     def test_independent_signals(self):
         np.random.seed(42)
