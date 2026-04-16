@@ -68,7 +68,7 @@ def test_pipeline_integration():
         print(f"✗ FAILED: {e}")
         raise
     
-        # ===== TEST 3: Stable Streaming =====
+    # ===== TEST 3: Stable Streaming =====
     print("\n[TEST 3] Stable Streaming (No Drift Expected)")
     X_stable = np.random.randn(150, 5)
     y_stable = np.sum(X_stable, axis=1) + 0.1*np.random.randn(150)

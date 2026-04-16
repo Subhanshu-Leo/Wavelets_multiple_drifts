@@ -458,6 +458,7 @@ class WaveletDriftDetectionPipeline:
         
         return {
             'drifts_detected': results['drifts_detected'],
+            'drift_types': results['drift_types'],     
             'predictions': results['predictions'],
             'errors': results['errors'],
             'retrainings': results['retrainings'],
@@ -573,9 +574,12 @@ class WaveletDriftDetectionPipeline:
             if evidence < ESCALATION_THRESHOLD:
                 return False, 'none'
 
-            # ── Layer 2: Composite permutation test ──
-            p_val, n_perms = self._block_permutation_test(
-                W_hist, W_new, b_min=50, b_max=200, block_size=5
+             # ── Layer 2: Composite permutation test ──
+            from src.detection.layer2_permutation import AdaptivePermutationTest
+            p_val, n_perms = AdaptivePermutationTest.run_composite(  # <-- FIXED: Use external shared method
+                W_hist, W_new, 
+                b_min=self.config.permutation_b_min, 
+                b_max=self.config.permutation_b_max
             )
 
             if p_val < 0.10:
@@ -606,73 +610,6 @@ class WaveletDriftDetectionPipeline:
             logger.debug(f"Detrending failed: {e}, returning original")
             return error_window
     
-    @staticmethod
-    def _block_permutation_test(W_hist: np.ndarray, W_new: np.ndarray,
-                               b_min: int = 100, b_max: int = 500,
-                               block_size: int = 5) -> Tuple[float, int]:
-        """Block permutation test for time series."""
-        # Compute observed statistic
-        mean_hist = np.mean(W_hist)
-        mean_new = np.mean(W_new)
-        std_hist = np.std(W_hist)
-        std_new = np.std(W_new)
-        pooled_std = np.std(np.concatenate([W_hist, W_new]))
-        
-        if pooled_std < 1e-10:
-            return 1.0, 1
-        
-        mean_term = np.abs(mean_new - mean_hist) / pooled_std
-        std_term = np.abs(std_new - std_hist) / pooled_std
-        delta_obs = mean_term + std_term
-        
-        # Block permutation
-        combined = np.concatenate([W_hist, W_new])
-        n_hist = len(W_hist)
-        n_total = len(combined)
-        
-        count_extreme = 0
-        
-        for b in range(1, b_max + 1):
-            # Block resampling
-            n_blocks = max(1, n_total // block_size)
-            block_indices = np.arange(n_blocks)
-            np.random.shuffle(block_indices)
-            
-            shuffled = []
-            for bi in block_indices:
-                start = bi * block_size
-                end = min((bi + 1) * block_size, n_total)
-                shuffled.append(combined[start:end])
-            
-            shuffled_full = np.concatenate(shuffled)[:n_total]
-            
-            W_hist_perm = shuffled_full[:n_hist]
-            W_new_perm = shuffled_full[n_hist:]
-            
-            # Recompute statistic
-            mean_hist_p = np.mean(W_hist_perm)
-            mean_new_p = np.mean(W_new_perm)
-            std_hist_p = np.std(W_hist_perm)
-            std_new_p = np.std(W_new_perm)
-            
-            mean_term_p = np.abs(mean_new_p - mean_hist_p) / (pooled_std + 1e-10)
-            std_term_p = np.abs(std_new_p - std_hist_p) / (pooled_std + 1e-10)
-            delta_perm = mean_term_p + std_term_p
-            
-            if delta_perm >= delta_obs:
-                count_extreme += 1
-            
-            # Early stopping
-            if b >= b_min:
-                p_val_current = (count_extreme + 1) / (b + 1)
-                
-                if p_val_current < 0.001:
-                    return p_val_current, b
-                if p_val_current > 0.20:
-                    return p_val_current, b
-        
-        p_val_final = (count_extreme + 1) / (b_max + 1)
-        return p_val_final, b_max
     
     def _post_drift_adapt(self, X_new: np.ndarray, y_new: np.ndarray, drift_type: str = 'mean') -> None:
         """Post-drift adaptation: recalibrate and retrain."""

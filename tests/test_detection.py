@@ -19,8 +19,7 @@ class TestHoeffingScreener:
         screener = HoeffingScreener(alpha=0.05)
         screener.calibrate(ref_energies)
         
-        assert screener._mean is not None
-        assert screener._std is not None
+        assert screener._calibrated_range is not None
         assert screener.is_calibrated
     
     def test_should_trigger(self):
@@ -104,7 +103,7 @@ class TestOOBValidator:
             validator.train_errors.append(0.1)
             validator.val_errors.append(0.1)
         
-        is_overfit, ratio = validator.check_overfitting()
+        is_overfit, ratio, _ = validator.check_overfitting()
         
         assert not is_overfit
         assert ratio == pytest.approx(1.0)

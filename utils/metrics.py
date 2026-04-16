@@ -9,6 +9,42 @@ class DriftMetrics:
     """Compute drift detection evaluation metrics."""
     
     @staticmethod
+    def compute_all(true_drifts: List[int], detected_drifts: List[int], tolerance: int = 100) -> Dict[str, float]:
+        """Compute F1, Precision, Recall, and Latency for drift detection."""
+        if not true_drifts and not detected_drifts:
+            return {'f1': 1.0, 'precision': 1.0, 'recall': 1.0, 'latency': 0.0}
+            
+        true_positives = 0
+        latencies = []
+        
+        # Match detected drifts to true drifts within tolerance
+        matched_true = set()
+        for det in detected_drifts:
+            valid_trues = [t for t in true_drifts if t <= det <= t + tolerance and t not in matched_true]
+            if valid_trues:
+                matched = min(valid_trues, key=lambda t: det - t)
+                matched_true.add(matched)
+                true_positives += 1
+                latencies.append(det - matched)
+                
+        false_positives = len(detected_drifts) - true_positives
+        false_negatives = len(true_drifts) - true_positives
+        
+        precision = true_positives / len(detected_drifts) if detected_drifts else 1.0
+        recall = true_positives / len(true_drifts) if true_drifts else 1.0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        avg_latency = float(np.mean(latencies)) if latencies else 0.0
+        
+        return {
+            'f1': f1,
+            'precision': precision,
+            'recall': recall,
+            'latency': avg_latency,
+            'false_alarms': false_positives,
+            'missed_drifts': false_negatives
+        }
+    
+    @staticmethod
     def detection_delay(true_drift_time: int,
                        detected_drift_time: int) -> int:
         """
