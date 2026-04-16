@@ -207,17 +207,17 @@ if __name__ == '__main__':
         X_train, y_train, X_test, y_test, n_repeats=10
     )
     
-    print(f"✓ Importances: {importances}")
-    print(f"✓ Ranks: {ranks}")
+    print(f" Importances: {importances}")
+    print(f" Ranks: {ranks}")
     
     # Feature 0 should have highest importance
     assert ranks[0] <= 2, f"Feature 0 should be in top 2, got rank {ranks[0]}"
-    print(f"✓ Feature 0 correctly identified as most important")
+    print(f" Feature 0 correctly identified as most important")
     
     # Test 2: Top k features
     print("\nTest 2: Identify top-3 features")
     top_3 = identify_top_important_features(importances, k=3)
-    print(f"✓ Top 3 features: {top_3}")
+    print(f" Top 3 features: {top_3}")
     
     # Test 3: Cross-validated importance (no separate test set)
     print("\nTest 3: Cross-validated importance")
@@ -225,10 +225,10 @@ if __name__ == '__main__':
         X, y, n_splits=3, n_repeats=5
     )
     
-    print(f"✓ CV importances: {importances_cv}")
+    print(f" CV importances: {importances_cv}")
     assert ranks_cv[0] <= 2
-    print(f"✓ Feature 0 correctly identified in CV as well")
+    print(f" Feature 0 correctly identified in CV as well")
     
     print("\n" + "="*60)
-    print("✓ All importance tests passed!")
+    print(" All importance tests passed!")
     print("="*60)

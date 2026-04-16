@@ -327,7 +327,7 @@ if __name__ == '__main__':
     coherence, scales = WaveletCoherence.compute(feature, error)
     mean_coh = np.mean(coherence)
     
-    print(f"✓ Mean coherence: {mean_coh:.4f} (should be > 0.6 for strongly coupled)")
+    print(f" Mean coherence: {mean_coh:.4f} (should be > 0.6 for strongly coupled)")
     assert mean_coh > 0.5, "Strongly coupled signals should have high coherence"
     
     # Test 2: Independent signals
@@ -338,7 +338,7 @@ if __name__ == '__main__':
     coherence_indep, _ = WaveletCoherence.compute(feature_indep, error_indep)
     mean_coh_indep = np.mean(coherence_indep)
     
-    print(f"✓ Mean coherence: {mean_coh_indep:.4f} (should be < 0.3 for independent)")
+    print(f" Mean coherence: {mean_coh_indep:.4f} (should be < 0.3 for independent)")
     assert mean_coh_indep < 0.4, "Independent signals should have low coherence"
     
     # Test 3: Feature-scale coherence matrix (with caching)
@@ -355,16 +355,16 @@ if __name__ == '__main__':
         feature_dict, error_signal, cache_cwt=True
     )
     
-    print(f"✓ Coherence matrix shape: {coherence_matrix.shape}")
-    print(f"✓ Feature 0 (sine) coherence: {np.mean(coherence_matrix[0, :]):.4f}")
-    print(f"✓ Feature 1 (noise) coherence: {np.mean(coherence_matrix[1, :]):.4f}")
-    print(f"✓ Feature 2 (mostly sine) coherence: {np.mean(coherence_matrix[2, :]):.4f}")
+    print(f" Coherence matrix shape: {coherence_matrix.shape}")
+    print(f" Feature 0 (sine) coherence: {np.mean(coherence_matrix[0, :]):.4f}")
+    print(f" Feature 1 (noise) coherence: {np.mean(coherence_matrix[1, :]):.4f}")
+    print(f" Feature 2 (mostly sine) coherence: {np.mean(coherence_matrix[2, :]):.4f}")
     
     # Feature 0 and 2 (sine-based) should have higher coherence than feature 1 (noise)
     assert coherence_matrix[0, :].mean() > coherence_matrix[1, :].mean()
     assert coherence_matrix[2, :].mean() > coherence_matrix[1, :].mean()
-    print("✓ Coherence ranking correct: sine-based > pure noise")
+    print(" Coherence ranking correct: sine-based > pure noise")
     
     print("\n" + "="*70)
-    print("✓ ALL COHERENCE TESTS PASSED!")
+    print(" ALL COHERENCE TESTS PASSED!")
     print("="*70)

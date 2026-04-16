@@ -5,45 +5,40 @@ Main entry point for the wavelet drift detection pipeline.
 import numpy as np
 import yaml
 import argparse
+import logging  # <-- Added logging
 from src.pipeline.drift_pipeline import WaveletDriftDetectionPipeline
 from experiments.synthetic_data import SyntheticDriftGenerator
 from utils.metrics import DriftMetrics
 
+# Turn on debug logging to catch silent exceptions!
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+
 def main(config_path: str = 'config/config.yaml',
         drift_type: str = 'sudden',
         stream_length: int = 5000):
-    """Run complete drift detection pipeline."""
     
     print("=" * 60)
     print("Wavelet-Enhanced Concept Drift Detection")
     print("=" * 60)
     
-    # Load config
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     print(f"\n✓ Loaded config from {config_path}")
     
-    # Generate synthetic data
-    print(f"\n✓ Generating {drift_type} drift stream (n={stream_length})...")
-    gen = SyntheticDriftGenerator()
+    gen = SyntheticDriftGenerator(seed=42)
     X, y, true_drifts = gen.generate(drift_type=drift_type, n=stream_length)
     print(f"  True drifts at: {true_drifts}")
     
-    # Split into warm-up and streaming
     n_warmup = config['ensemble']['n_init']
     X_warm, y_warm = X[:n_warmup], y[:n_warmup]
     X_stream, y_stream = X[n_warmup:], y[n_warmup:]
     
-    # Initialize pipeline
-    print(f"\n✓ Initializing pipeline...")
     pipeline = WaveletDriftDetectionPipeline(config)
     
-    # Warm-up
     print(f"\n✓ Warm-up phase (n={n_warmup})...")
     warmup_stats = pipeline.warm_up(X_warm, y_warm)
     print(f"  Warm-up complete: {warmup_stats}")
     
-    # Run stream processing
     print(f"\n✓ Running stream processing (n={len(X_stream)})...")
     results = pipeline.process_stream(X_stream, y_stream)
     
@@ -53,24 +48,20 @@ def main(config_path: str = 'config/config.yaml',
         print(f"  Drift types: {results['drift_types']}")
     print(f"  Retrainings triggered: {results['retrainings']}")
     
-    # Evaluate
-    print(f"\n✓ Evaluating results...")
-    # Adjust true drifts to relative streaming time (subtract warm-up period)
     relative_true_drifts = [d - n_warmup for d in true_drifts if d > n_warmup]
     detected_drifts = results['drifts_detected']
     
     metrics = DriftMetrics.compute_all(
         true_drifts=relative_true_drifts,
         detected_drifts=detected_drifts,
-        tolerance=100  # Accept detection within 100 samples
+        tolerance=100
     )
     
+    print(f"\n✓ Evaluating results...")
     for metric, value in metrics.items():
         print(f"  {metric}: {value:.4f}")
     
     print("\n" + "=" * 60)
-    print("Pipeline complete!")
-    print("=" * 60)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

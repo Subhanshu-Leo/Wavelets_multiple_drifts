@@ -191,7 +191,7 @@ if __name__ == '__main__':
     
     p_val, n_perms = AdaptivePermutationTest.run_composite(W_hist, W_new)
     assert p_val < 0.05, "Should detect mean shift"
-    print(f"✓ Mean shift detected: p={p_val:.6f}")
+    print(f" Mean shift detected: p={p_val:.6f}")
     
     # Test 2: Variance shift
     print("\n[TEST 2] Variance Shift (Primary Financial Drift Mode)")
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     
     p_val, n_perms = AdaptivePermutationTest.run_composite(W_hist, W_new)
     assert p_val < 0.05, "Should detect variance shift with composite statistic"
-    print(f"✓ Variance shift detected: p={p_val:.6f}")
+    print(f" Variance shift detected: p={p_val:.6f}")
     
     # Test 3: Block permutation on time series
     print("\n[TEST 3] Block Permutation (Time Series)")
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     
     print(f"  Standard permutation: p={p_val_std:.6f}, perms={n_perms_std}")
     print(f"  Block permutation: p={p_val_block:.6f}, perms={n_perms_block}")
-    print("✓ Both detect drift (block better for autocorrelated data)")
+    print(" Both detect drift (block better for autocorrelated data)")
     
     # Test 4: Laplace correction prevents p=0
     print("\n[TEST 4] Laplace Correction (no p=0)")
@@ -221,8 +221,8 @@ if __name__ == '__main__':
     
     p_val, _ = AdaptivePermutationTest.run_composite(W_hist_constant, W_new_shifted)
     assert p_val > 0, "p-value should never be exactly 0 (Laplace correction)"
-    print(f"✓ p-value never 0: p={p_val:.6f}")
+    print(f" p-value never 0: p={p_val:.6f}")
     
     print("\n" + "="*80)
-    print("✓✓✓ ALL PERMUTATION TESTS PASSED ✓✓✓")
+    print(" ALL PERMUTATION TESTS PASSED ")
     print("="*80)

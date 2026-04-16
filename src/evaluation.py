@@ -61,7 +61,7 @@ class DriftDetectionEvaluator:
             
             if detected_nearby:
                 correctly_detected.append((true_drift, detected_nearby[0]))
-                logger.info(f"✓ Drift at t={true_drift} detected at t={detected_nearby[0]}")
+                logger.info(f" Drift at t={true_drift} detected at t={detected_nearby[0]}")
             else:
                 missed_drifts.append(true_drift)
                 logger.warning(f"✗ Drift at t={true_drift} MISSED")
@@ -181,7 +181,7 @@ class DriftDetectionEvaluator:
         with open(filepath, 'w') as f:
             json.dump(metrics_serializable, f, indent=2, default=str)
         
-        logger.info(f"✓ Metrics saved to {filepath}")
+        logger.info(f" Metrics saved to {filepath}")
     
     def summary_table(self) -> str:
         """Return formatted summary table."""

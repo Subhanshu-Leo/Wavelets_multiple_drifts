@@ -44,9 +44,9 @@ class RealDataExperiment:
             'date_range': '2015-2023'
         }
         
-        print(f"✓ Loaded {n} samples")
-        print(f"✓ Warm-up: {n_train}, Evaluation: {len(X_eval)}")
-        print(f"✓ Features: {X.shape[1]}")
+        print(f" Loaded {n} samples")
+        print(f" Warm-up: {n_train}, Evaluation: {len(X_eval)}")
+        print(f" Features: {X.shape[1]}")
         
         return (X_warm, y_warm), (X_eval, y_eval), metadata
     
@@ -84,9 +84,9 @@ class RealDataExperiment:
             'frequency': 'hourly'
         }
         
-        print(f"✓ Loaded {n} samples")
-        print(f"✓ Warm-up: {n_train}, Evaluation: {len(X_eval)}")
-        print(f"✓ Features: {X.shape[1]}")
+        print(f" Loaded {n} samples")
+        print(f" Warm-up: {n_train}, Evaluation: {len(X_eval)}")
+        print(f" Features: {X.shape[1]}")
         
         return (X_warm, y_warm), (X_eval, y_eval), metadata
     

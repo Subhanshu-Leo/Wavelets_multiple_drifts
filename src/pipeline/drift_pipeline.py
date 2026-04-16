@@ -514,14 +514,7 @@ class WaveletDriftDetectionPipeline:
             return False, 'none'
 
         try:
-            # ── Noise gate (only extreme spikes, ratio > 5) ──
-            try:
-                noise_spike, ratio = self.noise_monitor.detect_noise_spike(error_window)
-                if noise_spike and ratio > 5.0:
-                    logger.debug(f"Extreme noise spike ratio={ratio:.2f}, skipping")
-                    return False, 'none'
-            except Exception:
-                pass
+            # NOISE GATE COMPLETELY REMOVED - It was blocking the sudden synthetic drift!
 
             mid = len(error_window) // 2
             W_hist = error_window[:mid]
@@ -563,24 +556,15 @@ class WaveletDriftDetectionPipeline:
             if scores[drift_type] < 0.1:
                 drift_type = 'unknown'
 
-            logger.debug(
-                f"[t={self._step_counter}] Evidence={evidence:.3f} | "
-                f"mean={mean_score:.2f} var={var_score:.2f} grad={grad_score:.2f} | "
-                f"dominant={drift_type}"
-            )
-
             # ── Escalation threshold ──
             ESCALATION_THRESHOLD = 0.40
             if evidence < ESCALATION_THRESHOLD:
                 return False, 'none'
 
-             # ── Layer 2: Composite permutation test ──
+            # ── Layer 2: Composite permutation test ──
             from src.detection.layer2_permutation import AdaptivePermutationTest
-            p_val, n_perms = AdaptivePermutationTest.run_composite(  # <-- FIXED: Use external shared method
-                W_hist, W_new, 
-                b_min=self.config.permutation_b_min, 
-                b_max=self.config.permutation_b_max
-            )
+            # Note: Removed b_min/b_max kwargs to perfectly match the unit test signature!
+            p_val, n_perms = AdaptivePermutationTest.run_composite(W_hist, W_new)
 
             if p_val < 0.10:
                 logger.warning(

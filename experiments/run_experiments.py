@@ -43,7 +43,7 @@ class ExperimentRunner:
         print("1. Generating synthetic data...")
         gen = SyntheticDriftGenerator(seed=42)
         X, y, true_drifts = gen.generate(drift_type=drift_type, n=5000)
-        print(f"✓ True drifts at: {true_drifts}")
+        print(f" True drifts at: {true_drifts}")
         
         # Initialize pipeline
         print("2. Initializing pipeline...")
@@ -101,7 +101,7 @@ class ExperimentRunner:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         result_file = Path(output_dir) / f'{drift_type}_results.json'
         ResultsIO.save_results(metrics, str(result_file))
-        print(f"✓ Results saved to {result_file}")
+        print(f" Results saved to {result_file}")
         
         return metrics
     
@@ -117,7 +117,7 @@ class ExperimentRunner:
         summary_df = pd.DataFrame(results)
         summary_file = Path(output_dir) / 'summary.csv'
         summary_df.to_csv(summary_file, index=False)
-        print(f"\n✓ Summary saved to {summary_file}")
+        print(f"\n Summary saved to {summary_file}")
         
         return summary_df
     
@@ -188,7 +188,7 @@ class ExperimentRunner:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         result_file = Path(output_dir) / f'{dataset}_results.json'
         ResultsIO.save_results(metrics, str(result_file))
-        print(f"✓ Results saved to {result_file}")
+        print(f" Results saved to {result_file}")
         
         return metrics
 

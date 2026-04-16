@@ -67,7 +67,7 @@ def granger_causality_test(error_signal: np.ndarray,
     Reference: Granger (1969), Engle & Granger (1987)
     """
     try:
-        from statsmodels.tsa.api import grangercausalitytests
+        from statsmodels.tsa.stattools import grangercausalitytests
     except ImportError:
         logger.error("statsmodels required for Granger test")
         return False, np.nan
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     feature = np.random.randn(200)
     
     passes, p_val = granger_causality_test(error, feature, lag=5)
-    print(f"✓ No causality: p={p_val:.4f}, passes={passes}")
+    print(f" No causality: p={p_val:.4f}, passes={passes}")
     
     # Test 2: With causality
     print("\nTest 2: Feature causes error")
@@ -143,4 +143,4 @@ if __name__ == '__main__':
         error[t] = 0.7 * feature[t-1] + 0.1*np.random.randn()
     
     passes, p_val = granger_causality_test(error, feature, lag=5)
-    print(f"✓ With causality: p={p_val:.4f}, passes={passes}")
+    print(f" With causality: p={p_val:.4f}, passes={passes}")

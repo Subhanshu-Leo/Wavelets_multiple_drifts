@@ -158,7 +158,7 @@ if __name__ == '__main__':
     handler = MissingValueHandler(gap_threshold=5)
     X_imputed, metadata = handler.impute(X_missing, missing_mask)
     
-    print(f"✓ Imputed {metadata['n_imputed']} values")
+    print(f" Imputed {metadata['n_imputed']} values")
     print(f"  Methods: {metadata['methods_used']}")
     
     mse = np.mean((X_imputed[missing_mask] - X[missing_mask])**2)

@@ -44,7 +44,7 @@ def train_and_save_pipeline(X_warm: np.ndarray, y_warm: np.ndarray,
     
     # Warm-up
     warm_stats = pipeline.warm_up(X_warm, y_warm)
-    logger.info(f"✓ Warm-up complete")
+    logger.info(f" Warm-up complete")
     for key, val in warm_stats.items():
         logger.info(f"  {key}: {val}")
     
@@ -52,7 +52,7 @@ def train_and_save_pipeline(X_warm: np.ndarray, y_warm: np.ndarray,
     filepath = f'{model_name}.pkl'
     pipeline.save(filepath)
     
-    logger.info(f"✓ Pipeline ready for inference")
+    logger.info(f" Pipeline ready for inference")
     
     return filepath
 
@@ -76,12 +76,12 @@ def load_and_infer_pipeline(model_path: str, X_stream: np.ndarray,
     
     # Load
     pipeline = WaveletDriftDetectionPipeline.load(model_path)
-    logger.info(f"✓ Pipeline loaded from {model_path}")
+    logger.info(f" Pipeline loaded from {model_path}")
     
     # Infer
     results = pipeline.process_stream(X_stream, y_stream)
     
-    logger.info(f"✓ Stream processed:")
+    logger.info(f" Stream processed:")
     logger.info(f"  Predictions: {results['predictions_made']}")
     logger.info(f"  Drifts detected: {len(results['drifts_detected'])}")
     if results['drifts_detected']:
@@ -116,7 +116,7 @@ def evaluate_detections(results: Dict, true_drift_times: list,
     # Save metrics
     evaluator.save_metrics(output_file)
     
-    logger.info(f"✓ Report saved to {output_file}")
+    logger.info(f" Report saved to {output_file}")
     
     return metrics
 
@@ -204,8 +204,8 @@ def run_complete_pipeline(X_warm: np.ndarray, y_warm: np.ndarray,
     with open(f'{experiment_dir}/summary.json', 'w') as f:
         json.dump(summary, f, indent=2)
     
-    logger.info(f"\n✓ EXPERIMENT COMPLETE")
-    logger.info(f"✓ All outputs saved to {experiment_dir}/")
+    logger.info(f"\n EXPERIMENT COMPLETE")
+    logger.info(f" All outputs saved to {experiment_dir}/")
     
     return results, metrics
 
@@ -245,8 +245,8 @@ if __name__ == '__main__':
     X_stream = np.array(X_stream)
     y_stream = np.array(y_stream)
     
-    print(f"✓ Data generated: 500 warm-up samples, 150 stream samples")
-    print(f"✓ True drift at t=75 (target mean increases by 2.0)")
+    print(f" Data generated: 500 warm-up samples, 150 stream samples")
+    print(f" True drift at t=75 (target mean increases by 2.0)")
     
     # ===== Run Complete Pipeline =====
     results, metrics = run_complete_pipeline(

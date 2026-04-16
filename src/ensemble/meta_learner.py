@@ -246,7 +246,7 @@ def create_oof_meta_features(base_learners_dict: Dict[int, object],
             logger.error(f"Scale {j}: final training failed: {e}")
             raise
         
-        logger.info(f"✓ Scale {j}: OOF predictions created, final learner trained")
+        logger.info(f" Scale {j}: OOF predictions created, final learner trained")
     
     # Stack OOF predictions to create meta-features
     oof_meta_features = np.column_stack([
@@ -296,8 +296,8 @@ if __name__ == '__main__':
         X_dict, y_global, n_folds=3
     )
     
-    print(f"✓ OOF predictions: {list(oof_dict.keys())}")
-    print(f"✓ OOF shape per scale: {oof_dict[0].shape}")
+    print(f" OOF predictions: {list(oof_dict.keys())}")
+    print(f" OOF shape per scale: {oof_dict[0].shape}")
     
     # Test 2: Train meta-learner on OOF
     print("\nTest 2: Meta-learner training on OOF")
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     meta_learner = StackedMetaLearner(alpha=1.0)
     meta_learner.fit(oof_dict, y_global, validate_oof=False)  # Don't warn (we know it's OOF)
     
-    print(f"✓ Meta-learner trained on OOF predictions")
+    print(f" Meta-learner trained on OOF predictions")
     
     # Test 3: Predict with final learners + meta-learner
     print("\nTest 3: Prediction pipeline")
@@ -318,9 +318,9 @@ if __name__ == '__main__':
     # Get meta prediction
     y_meta = meta_learner.predict(base_preds)
     
-    print(f"✓ Final predictions shape: {y_meta.shape}")
+    print(f" Final predictions shape: {y_meta.shape}")
     assert y_meta.shape == (10,)
     
     print("\n" + "="*70)
-    print("✓ ALL META-LEARNER TESTS PASSED!")
+    print(" ALL META-LEARNER TESTS PASSED!")
     print("="*70)

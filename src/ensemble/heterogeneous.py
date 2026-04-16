@@ -292,7 +292,7 @@ if __name__ == '__main__':
     ensemble = HeterogeneousEnsemble(random_state=42)
     ensemble.fit(X_train, y_train)
     
-    print(f"✓ Learned weights: {ensemble.weights}")
+    print(f" Learned weights: {ensemble.weights}")
     assert abs(sum(ensemble.weights.values()) - 1.0) < 1e-6, "Weights should sum to 1"
     assert not all(abs(w - 1/3) < 0.01 for w in ensemble.weights.values()), \
         "Weights should NOT all be 1/3 (learned, not fixed)"
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     y_pred = ensemble.predict(X_test)
     
     assert y_pred.shape == (10,)
-    print(f"✓ Predictions: shape={y_pred.shape}")
+    print(f" Predictions: shape={y_pred.shape}")
     
     # Test 3: Random state reproducibility
     print("\n[TEST 3] Random State Reproducibility")
@@ -317,7 +317,7 @@ if __name__ == '__main__':
     pred2 = ensemble2.predict(X_test)
     
     assert np.allclose(pred1, pred2), "Same random_state should produce same predictions"
-    print("✓ Reproducibility verified")
+    print(" Reproducibility verified")
     
     # Test 4: Multi-resolution ensemble
     print("\n[TEST 4] Multi-Resolution Ensemble")
@@ -332,8 +332,8 @@ if __name__ == '__main__':
     y_pred = multi_ensemble.predict(X_test_dict)
     
     assert y_pred.shape == (10,)
-    print(f"✓ Multi-resolution predictions: shape={y_pred.shape}")
+    print(f" Multi-resolution predictions: shape={y_pred.shape}")
     
     print("\n" + "="*80)
-    print("✓✓✓ ALL ENSEMBLE TESTS PASSED ✓✓✓")
+    print(" ALL ENSEMBLE TESTS PASSED ")
     print("="*80)

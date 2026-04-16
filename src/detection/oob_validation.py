@@ -231,7 +231,7 @@ if __name__ == '__main__':
     
     is_overfit, ratio, metadata = validator.check_overfitting()
     assert not is_overfit
-    print(f"✓ Ratio: {ratio:.2f}, Correctly identified as NOT overfitting")
+    print(f" Ratio: {ratio:.2f}, Correctly identified as NOT overfitting")
     
     # Test 2: Severe overfitting
     print("\nTest 2: Severe overfitting detection")
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     
     is_overfit, ratio, metadata = validator.check_overfitting()
     assert is_overfit
-    print(f"✓ Ratio: {ratio:.2f}, Correctly identified as OVERFITTING")
+    print(f" Ratio: {ratio:.2f}, Correctly identified as OVERFITTING")
     
     # Test 3: Error on missing val predictions
     print("\nTest 3: Error handling for missing validation predictions")
@@ -267,8 +267,8 @@ if __name__ == '__main__':
         validator.check_overfitting()
         assert False, "Should have raised RuntimeError"
     except RuntimeError as e:
-        print(f"✓ Correctly raised error: {e}")
+        print(f" Correctly raised error: {e}")
     
     print("\n" + "="*60)
-    print("✓ All OOBValidator tests passed!")
+    print(" All OOBValidator tests passed!")
     print("="*60)

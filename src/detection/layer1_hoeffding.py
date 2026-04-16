@@ -426,12 +426,12 @@ if __name__ == '__main__':
     # Test 1a: Small change should NOT escalate
     small_change = 0.5  # Mean energy difference < 0.5
     assert not screener.should_escalate(small_change, n_window=200)
-    print(f"✓ Test 1a: Small change (δ={small_change}) correctly NOT escalated")
+    print(f" Test 1a: Small change (δ={small_change}) correctly NOT escalated")
     
     # Test 1b: Large change should escalate
     large_change = 2.0  # Mean energy difference > 2.0
     assert screener.should_escalate(large_change, n_window=200)
-    print(f"✓ Test 1b: Large change (δ={large_change}) correctly escalated")
+    print(f" Test 1b: Large change (δ={large_change}) correctly escalated")
     
     # Test 1c: Error handling for uncalibrated screener
     screener_uncal = HoeffingScreener(alpha=0.05)
@@ -439,7 +439,7 @@ if __name__ == '__main__':
         screener_uncal.should_escalate(1.0, 200)
         assert False, "Should have raised RuntimeError"
     except RuntimeError:
-        print("✓ Test 1c: Uncalibrated screener correctly raises error")
+        print(" Test 1c: Uncalibrated screener correctly raises error")
     
     # ======================================================================
     # Test 2: Page-Hinkley Test — TWO-SIDED (key fix!)
@@ -459,7 +459,7 @@ if __name__ == '__main__':
             alarms.append('stable')
     
     assert len(alarms) == 0, "Should not alarm during stable phase"
-    print("✓ Test 2a: Stable phase — no false alarms")
+    print(" Test 2a: Stable phase — no false alarms")
     
     # Test 2b: UPWARD shift (energy increases)
     ph.reset()
@@ -473,7 +473,7 @@ if __name__ == '__main__':
             break
     
     assert alarm_time_up is not None and alarm_time_up < 50
-    print(f"✓ Test 2b: UPWARD shift detected at time {alarm_time_up}")
+    print(f" Test 2b: UPWARD shift detected at time {alarm_time_up}")
     
     # Test 2c: DOWNWARD shift (energy decreases) — CRITICAL!
     # This is the key fix: original one-sided test would miss this.
@@ -488,7 +488,7 @@ if __name__ == '__main__':
             break
     
     assert alarm_time_down is not None and alarm_time_down < 50
-    print(f"✓ Test 2c: DOWNWARD shift detected at time {alarm_time_down} (KEY FIX!)")
+    print(f" Test 2c: DOWNWARD shift detected at time {alarm_time_down} (KEY FIX!)")
     
     # ======================================================================
     # Test 3: Integration Test — Screener → Page-Hinkley Pipeline
@@ -522,7 +522,7 @@ if __name__ == '__main__':
             # Layer 2: Confirmation via Page-Hinkley
             if ph.update(energy):
                 detected = True
-                print(f"✓ Drift detected via Layer 1→2 at time {t}")
+                print(f" Drift detected via Layer 1→2 at time {t}")
                 break
         else:
             ph.update(energy)  # Still update Ph without escalation
@@ -530,5 +530,5 @@ if __name__ == '__main__':
     assert detected, "Pipeline should detect drift"
     
     print("\n" + "="*70)
-    print("✓ ALL TESTS PASSED!")
+    print(" ALL TESTS PASSED!")
     print("="*70)
