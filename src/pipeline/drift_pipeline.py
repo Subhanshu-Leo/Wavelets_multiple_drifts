@@ -620,7 +620,7 @@ class WaveletDriftDetectionPipeline:
         
         # Step 3: Recalibrate screener
         abs_errors = new_errors
-        window_size = max(5, len(abs_errors) // 3)
+        window_size = max(5, len(abs_errors) // 10)
         ref_energies = []
         
         for i in range(0, len(abs_errors) - window_size + 1, max(1, window_size // 3)):
