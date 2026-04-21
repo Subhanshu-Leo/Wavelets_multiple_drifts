@@ -627,9 +627,19 @@ class WaveletDriftDetectionPipeline:
             rms = np.sqrt(np.mean(abs_errors[i:i+window_size] ** 2))
             ref_energies.append(rms)
         
+        
         ref_energies = np.array(ref_energies)
         
-        if len(ref_energies) >= 5:
+        # --- NEW BOOTSTRAP LOGIC ---
+        if len(ref_energies) < 10:
+            logger.warning(f"Only got {len(ref_energies)} reference values, bootstrapping to reach 10+")
+            mean_err = np.mean(abs_errors)
+            std_err = np.std(abs_errors)
+            # Create 20 synthetic reference values based on the error distribution
+            ref_energies = np.abs(mean_err + std_err * np.random.randn(20))
+        # ---------------------------
+
+        if len(ref_energies) >= 10: # <-- Safely check for >= 10 now
             self.screener.calibrate(ref_energies)
             self._ref_energy_mean = float(np.mean(ref_energies))
             self._ref_energy_std = float(np.std(ref_energies)) or 1e-10
