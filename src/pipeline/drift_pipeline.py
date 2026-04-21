@@ -88,7 +88,7 @@ class WaveletDriftDetectionPipeline:
             permutation_b_max=perm_cfg.get('b_max', 500),
             permutation_early_stop_low=perm_cfg.get('early_stop_low', 0.001),
             permutation_early_stop_high=perm_cfg.get('early_stop_high', 0.20),
-            cooldown_samples=config.get('cooldown_samples', 50)
+            cooldown_samples=config.get('detection', {}).get('cooldown_samples', 50)
         )
         
         # DWT
@@ -247,8 +247,9 @@ class WaveletDriftDetectionPipeline:
         abs_errors = np.abs(error_stream)
         
         ref_energies = []
-        window_size = min(30, len(abs_errors) // 5)
-        stride = max(1, window_size // 3)
+        # Fix window size and stride calculations
+        window_size = max(3, len(abs_errors) // 10)
+        stride = max(1, window_size // 2)
         
         if window_size < 5:
             window_size = len(abs_errors)
@@ -514,21 +515,14 @@ class WaveletDriftDetectionPipeline:
             return False, 'none'
 
         try:
-            # NOISE GATE COMPLETELY REMOVED - It was blocking the sudden synthetic drift!
-
             mid = len(error_window) // 2
             W_hist = error_window[:mid]
             W_new  = error_window[mid:]
 
-            # ── Layer 1A: Mean shift ──
-            rms_hist = np.sqrt(np.mean(W_hist ** 2))
-            rms_new  = np.sqrt(np.mean(W_new  ** 2))
-            energy_ratio = rms_new / (rms_hist + 1e-10)
-            
-            if energy_ratio >= 1.0:
-                mean_score = float(np.clip((energy_ratio - 1.0) / 4.0, 0.0, 1.0))
-            else:
-                mean_score = float(np.clip((1.0 - energy_ratio) / 0.8, 0.0, 1.0))
+            # ── Layer 1A: Mean shift (FIXED: t-statistic style normalization) ──
+            pooled_std = np.std(np.concatenate([W_hist, W_new])) + 1e-10
+            mean_diff_normalized = np.abs(np.mean(W_new) - np.mean(W_hist)) / pooled_std
+            mean_score = float(np.clip(mean_diff_normalized / 3.0, 0.0, 1.0))
 
             # ── Layer 1B: Variance shift ──
             std_hist = np.std(W_hist) + 1e-10
@@ -556,15 +550,20 @@ class WaveletDriftDetectionPipeline:
             if scores[drift_type] < 0.1:
                 drift_type = 'unknown'
 
-            # ── Escalation threshold ──
-            ESCALATION_THRESHOLD = 0.40
+            # ── Escalation threshold (FIXED: Lowered to 0.25) ──
+            ESCALATION_THRESHOLD = 0.25
             if evidence < ESCALATION_THRESHOLD:
                 return False, 'none'
 
             # ── Layer 2: Composite permutation test ──
             from src.detection.layer2_permutation import AdaptivePermutationTest
-            # Note: Removed b_min/b_max kwargs to perfectly match the unit test signature!
-            p_val, n_perms = AdaptivePermutationTest.run_composite(W_hist, W_new)
+            p_val, _ = AdaptivePermutationTest.run_composite(
+                W_hist, W_new,
+                b_min=self.config.permutation_b_min,
+                b_max=self.config.permutation_b_max,
+                early_stop_low=self.config.permutation_early_stop_low,
+                early_stop_high=self.config.permutation_early_stop_high
+            )
 
             if p_val < 0.10:
                 logger.warning(

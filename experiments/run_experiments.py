@@ -72,12 +72,10 @@ class ExperimentRunner:
         # Evaluate
         print("5. Evaluating results...")
         if len(true_drifts) > 0:
-            detection_delay = [
-                min([detected_drifts[i] - true_drifts[j] 
-                    for i, j in zip(range(len(detected_drifts)), 
-                                    range(len(true_drifts)))])
-                if detected_drifts else float('inf')
-            ]
+            detection_delay = []
+            for td in true_drifts:
+                nearby = [d - td for d in detected_drifts if 0 <= d - td <= tolerance]
+                detection_delay.append(min(nearby) if nearby else float('inf'))
         else:
             detection_delay = []
         

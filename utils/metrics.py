@@ -21,7 +21,7 @@ class DriftMetrics:
         # Match detected drifts to true drifts within tolerance
         matched_true = set()
         for det in detected_drifts:
-            valid_trues = [t for t in true_drifts if t <= det <= t + tolerance and t not in matched_true]
+            valid_trues = [t for t in true_drifts if abs(det - t) <= tolerance and t not in matched_true]
             if valid_trues:
                 matched = min(valid_trues, key=lambda t: det - t)
                 matched_true.add(matched)
