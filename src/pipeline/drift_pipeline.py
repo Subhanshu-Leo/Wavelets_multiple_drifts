@@ -88,7 +88,7 @@ class WaveletDriftDetectionPipeline:
             permutation_b_max=perm_cfg.get('b_max', 500),
             permutation_early_stop_low=perm_cfg.get('early_stop_low', 0.001),
             permutation_early_stop_high=perm_cfg.get('early_stop_high', 0.20),
-            cooldown_samples=config.get('detection', {}).get('cooldown_samples', 50)
+            cooldown_samples=config.get('detection', {}).get('cooldown_samples', 200)
         )
         
         # DWT
@@ -672,10 +672,10 @@ class WaveletDriftDetectionPipeline:
                     logger.debug(f"Validator update skipped: {e}")
             
             # Retrain
+                        # Retrain
             try:
                 J = self.config.dwt_level
                 
-                # Build padded X and y if needed
                 if len(X_train) < self._min_signal_length:
                     pad_len = self._min_signal_length - len(X_train)
                     ordered_buf = np.roll(
@@ -684,28 +684,33 @@ class WaveletDriftDetectionPipeline:
                         axis=0
                     )
                     X_train_for_decomp = np.vstack([ordered_buf[-pad_len:], X_train])
-                    
-                    # Pad y_train with recent y values from the rolling buffer
                     y_buf_array = np.array(list(self._y_buffer))
                     if len(y_buf_array) >= pad_len:
                         y_pad = y_buf_array[-pad_len:]
                     else:
-                        # Not enough y history — repeat the first known y value
                         shortage = pad_len - len(y_buf_array)
-                        y_pad = np.concatenate([
-                            np.full(shortage, y_train[0]),
-                            y_buf_array
-                        ])
+                        y_pad = np.concatenate([np.full(shortage, y_train[0]), y_buf_array])
                     y_train_for_decomp = np.concatenate([y_pad, y_train])
                 else:
                     X_train_for_decomp = X_train
                     y_train_for_decomp = y_train
                 
-                # Now decompose both using the same length arrays
                 X_dict_train = self._decompose_features(X_train_for_decomp)
-                y_decomp = self.decomposer.decompose(y_train_for_decomp)
-                fallback_zeros = np.zeros_like(y_decomp[0]) if 0 in y_decomp else np.zeros_like(y_train_for_decomp)
-                y_dict = {j: y_decomp.get(j, fallback_zeros) for j in range(J + 1)}
+                
+                # *** THE FIX: reconstruct y per-scale to full signal length ***
+                y_decomp_full = self.decomposer.decompose(y_train_for_decomp)
+                y_dict = {}
+                for j in range(J + 1):
+                    decomp_j_only = {
+                        k: (y_decomp_full[k] if k == j
+                            else np.zeros_like(y_decomp_full.get(k, y_decomp_full[j])))
+                        for k in range(J + 1)
+                    }
+                    try:
+                        y_dict[j] = self.decomposer.reconstruct(decomp_j_only)
+                    except Exception as e:
+                        logger.error(f"y_dict reconstruction failed at scale {j}: {e}")
+                        y_dict[j] = y_train_for_decomp.copy()
                 
                 self.ensemble.fit(X_dict_train, y_dict, val_size=min(20, split // 3))
                 logger.info("OK Ensemble retrained on post-drift data")
