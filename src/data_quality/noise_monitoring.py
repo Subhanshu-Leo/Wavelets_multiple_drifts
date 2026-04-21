@@ -49,8 +49,8 @@ class NoiseMonitor:
         Args:
             signal: Error signal from warm-up (should be stable, no drift)
         """
-        if len(signal) < 20:  # CHANGED: was 50
-            raise ValueError(f"Signal too short ({len(signal)} < 20)")
+        if len(signal) < 10:  # CHANGED: was 50
+            raise ValueError(f"Signal too short ({len(signal)} < 10)")
         
         try:
             # Estimate baseline noise using MAD

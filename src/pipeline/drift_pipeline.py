@@ -601,10 +601,18 @@ class WaveletDriftDetectionPipeline:
         # Step 1: Decompose new data
         try:
             if len(X_new) >= self._min_signal_length:
-                X_dict_new = self._decompose_features(X_new)
+                X_new_for_decomp = X_new
             else:
-                padded = np.vstack([self._feature_buffer[-(self._min_signal_length - len(X_new)):], X_new])
-                X_dict_new = self._decompose_features(padded)
+                pad_len = self._min_signal_length - len(X_new)
+                # Roll buffer to correct order first
+                ordered_buf = np.roll(
+                    self._feature_buffer,
+                    -self._feature_buffer_idx % self._min_signal_length,
+                    axis=0
+                )
+                X_new_for_decomp = np.vstack([ordered_buf[-pad_len:], X_new])
+
+            X_dict_new = self._decompose_features(X_new_for_decomp)
         except Exception as e:
             logger.error(f"Feature decomposition failed: {e}")
             return
@@ -620,7 +628,8 @@ class WaveletDriftDetectionPipeline:
         
         # Step 3: Recalibrate screener
         abs_errors = new_errors
-        window_size = max(5, len(abs_errors) // 10)
+        window_size = max(3, len(abs_errors) // 20)
+        stride = max(1, window_size // 2)   # overlap windows for more samples
         ref_energies = []
         
         for i in range(0, len(abs_errors) - window_size + 1, max(1, window_size // 3)):
@@ -649,7 +658,7 @@ class WaveletDriftDetectionPipeline:
             logger.warning("Not enough post-drift data to recalibrate screener, skipping")
         
         # Step 4: Retrain ensemble
-        min_train_required = self._min_signal_length if drift_type == 'variance' else 20
+        min_train_required = self._min_signal_length
         if len(X_new) >= min_train_required:
             split = len(X_new) // 2
             X_train, X_val = X_new[:split], X_new[split:]
@@ -665,15 +674,42 @@ class WaveletDriftDetectionPipeline:
             # Retrain
             try:
                 J = self.config.dwt_level
-                if len(X_train) >= self._min_signal_length:
-                    X_dict_train = self._decompose_features(X_train)
-                    y_decomp = self.decomposer.decompose(y_train)
-                    fallback_zeros = np.zeros_like(y_decomp[0]) if 0 in y_decomp else np.zeros_like(y_train)
-                    y_dict = {j: y_decomp.get(j,fallback_zeros) for j in range(J + 1)}
-                    self.ensemble.fit(X_dict_train, y_dict, val_size=min(20, split // 3))
-                    logger.info("OK Ensemble retrained on post-drift data")
+                
+                # Build padded X and y if needed
+                if len(X_train) < self._min_signal_length:
+                    pad_len = self._min_signal_length - len(X_train)
+                    ordered_buf = np.roll(
+                        self._feature_buffer,
+                        -self._feature_buffer_idx % self._min_signal_length,
+                        axis=0
+                    )
+                    X_train_for_decomp = np.vstack([ordered_buf[-pad_len:], X_train])
+                    
+                    # Pad y_train with recent y values from the rolling buffer
+                    y_buf_array = np.array(list(self._y_buffer))
+                    if len(y_buf_array) >= pad_len:
+                        y_pad = y_buf_array[-pad_len:]
+                    else:
+                        # Not enough y history — repeat the first known y value
+                        shortage = pad_len - len(y_buf_array)
+                        y_pad = np.concatenate([
+                            np.full(shortage, y_train[0]),
+                            y_buf_array
+                        ])
+                    y_train_for_decomp = np.concatenate([y_pad, y_train])
                 else:
-                    logger.warning(f"Post-drift X_train too short ({len(X_train)}) for full refit")
+                    X_train_for_decomp = X_train
+                    y_train_for_decomp = y_train
+                
+                # Now decompose both using the same length arrays
+                X_dict_train = self._decompose_features(X_train_for_decomp)
+                y_decomp = self.decomposer.decompose(y_train_for_decomp)
+                fallback_zeros = np.zeros_like(y_decomp[0]) if 0 in y_decomp else np.zeros_like(y_train_for_decomp)
+                y_dict = {j: y_decomp.get(j, fallback_zeros) for j in range(J + 1)}
+                
+                self.ensemble.fit(X_dict_train, y_dict, val_size=min(20, split // 3))
+                logger.info("OK Ensemble retrained on post-drift data")
+
             except Exception as e:
                 logger.error(f"Ensemble refit failed: {e}")
         else:
