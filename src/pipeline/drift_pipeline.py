@@ -551,7 +551,7 @@ class WaveletDriftDetectionPipeline:
                 drift_type = 'unknown'
 
             # ── Escalation threshold (FIXED: Lowered to 0.25) ──
-            ESCALATION_THRESHOLD = 0.25
+            ESCALATION_THRESHOLD = 0.15
             if evidence < ESCALATION_THRESHOLD:
                 return False, 'none'
 
@@ -565,7 +565,7 @@ class WaveletDriftDetectionPipeline:
                 early_stop_high=self.config.permutation_early_stop_high
             )
 
-            if p_val < 0.10:
+            if p_val < self.config.detection_alpha:
                 logger.warning(
                     f"DRIFT CONFIRMED t={self._step_counter}: "
                     f"type={drift_type}, evidence={evidence:.3f}, p={p_val:.4f}"
@@ -657,49 +657,26 @@ class WaveletDriftDetectionPipeline:
         else:
             logger.warning("Not enough post-drift data to recalibrate screener, skipping")
         
-        # Step 4: Retrain ensemble
+                # Step 4: Retrain ensemble
         min_train_required = self._min_signal_length
         if len(X_new) >= min_train_required:
-            split = len(X_new) // 2
-            X_train, X_val = X_new[:split], X_new[split:]
-            y_train, y_val = y_new[:split], y_new[split:]
-            
-            # Add validation observations
-            for i in range(len(X_val)):
-                try:
-                    self.validator.add_val_observation(X_val[i:i+1], float(y_val[i]))
-                except Exception as e:
-                    logger.debug(f"Validator update skipped: {e}")
-            
-            # Retrain
-                        # Retrain
             try:
                 J = self.config.dwt_level
-                
-                if len(X_train) < self._min_signal_length:
-                    pad_len = self._min_signal_length - len(X_train)
-                    ordered_buf = np.roll(
-                        self._feature_buffer,
-                        -self._feature_buffer_idx % self._min_signal_length,
-                        axis=0
+
+                # 1. Decompose full cooldown buffer
+                X_decomps = []
+                for i in range(X_new.shape[1]):
+                    X_decomps.append(self.decomposer.decompose(X_new[:, i]))
+
+                X_dict_full = {}
+                for j in range(J + 1):
+                    X_dict_full[j] = np.column_stack(
+                        [X_decomps[i].get(j, np.zeros_like(X_decomps[i][0]))
+                         for i in range(len(X_decomps))]
                     )
-                    X_train_for_decomp = np.vstack([ordered_buf[-pad_len:], X_train])
-                    y_buf_array = np.array(list(self._y_buffer))
-                    if len(y_buf_array) >= pad_len:
-                        y_pad = y_buf_array[-pad_len:]
-                    else:
-                        shortage = pad_len - len(y_buf_array)
-                        y_pad = np.concatenate([np.full(shortage, y_train[0]), y_buf_array])
-                    y_train_for_decomp = np.concatenate([y_pad, y_train])
-                else:
-                    X_train_for_decomp = X_train
-                    y_train_for_decomp = y_train
-                
-                X_dict_train = self._decompose_features(X_train_for_decomp)
-                
-                # *** THE FIX: reconstruct y per-scale to full signal length ***
-                y_decomp_full = self.decomposer.decompose(y_train_for_decomp)
-                y_dict = {}
+
+                y_decomp_full = self.decomposer.decompose(y_new)
+                y_dict_full = {}
                 for j in range(J + 1):
                     decomp_j_only = {
                         k: (y_decomp_full[k] if k == j
@@ -707,19 +684,48 @@ class WaveletDriftDetectionPipeline:
                         for k in range(J + 1)
                     }
                     try:
-                        y_dict[j] = self.decomposer.reconstruct(decomp_j_only)
+                        y_reconstructed = self.decomposer.reconstruct(decomp_j_only)
                     except Exception as e:
                         logger.error(f"y_dict reconstruction failed at scale {j}: {e}")
-                        y_dict[j] = y_train_for_decomp.copy()
-                
-                self.ensemble.fit(X_dict_train, y_dict, val_size=min(20, split // 3))
+                        y_reconstructed = y_new.copy()
+                    
+                    target_rows = X_dict_full[j].shape[0]
+                    if len(y_reconstructed) >= target_rows:
+                        y_dict_full[j] = y_reconstructed[:target_rows]
+                    else:
+                        y_dict_full[j] = np.pad(y_reconstructed, (0, target_rows - len(y_reconstructed)), mode='edge')
+
+                # 2. Split coefficient arrays
+                X_dict_train = {}
+                y_dict_train = {}
+                X_dict_val   = {}
+
+                for j in range(J + 1):
+                    n_j = X_dict_full[j].shape[0]
+                    split_j = n_j // 2
+                    X_dict_train[j] = X_dict_full[j][split_j:]
+                    y_dict_train[j] = y_dict_full[j][split_j:]
+                    X_dict_val[j]   = X_dict_full[j][:split_j]
+
+                # Add validation observations
+                if 0 in X_dict_val:
+                    for i in range(len(X_dict_val[0])):
+                        try:
+                            self.validator.add_val_observation(X_dict_val[0][i:i+1], float(y_dict_full[0][i]))
+                        except Exception:
+                            pass
+
+                min_train_coeff = min(X_dict_train[j].shape[0] for j in range(J + 1))
+                logger.info(f"Retraining with {min_train_coeff} samples at coarsest scale")
+
+                self.ensemble.fit(X_dict_train, y_dict_train, val_size=min(10, min_train_coeff // 3))
                 logger.info("OK Ensemble retrained on post-drift data")
 
             except Exception as e:
                 logger.error(f"Ensemble refit failed: {e}")
         else:
             logger.warning(f"Skipping refit for '{drift_type}' drift: "
-                           f"X_train ({len(X_new)}) < min_required ({min_train_required})")
+                           f"X_new ({len(X_new)}) < min_required ({min_train_required})")
         
         # Step 5: Recalibrate noise monitor
         if len(new_errors) >= 10:

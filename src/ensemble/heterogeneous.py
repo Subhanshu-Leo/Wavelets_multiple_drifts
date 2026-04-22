@@ -68,11 +68,10 @@ class HeterogeneousEnsemble:
             y: Training targets (n_samples,)
             val_fraction: Fraction for validation set
         """
-        if len(X) < 20:
-            raise ValueError(f"Need at least 20 samples, got {len(X)}")
+        if len(X) < 5:
+            raise ValueError(f"Need at least 5 samples, got {len(X)}")
         
-        # Split train/val
-        n_val = max(10, int(len(X) * val_fraction))
+        n_val = max(3, int(len(X) * val_fraction))
         n_train = len(X) - n_val
         
         X_train, X_val = X[:n_train], X[n_train:]

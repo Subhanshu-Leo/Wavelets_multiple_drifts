@@ -13,8 +13,8 @@ ensemble:
 
 detection:
   n_w: 200                 
-  alpha: 0.01              
-  cooldown_samples: 200
+  alpha: 0.05              
+  cooldown_samples: 150
 
 permutation:
   b_perm: 1000             
