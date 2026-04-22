@@ -18,15 +18,18 @@ class DriftMetrics:
         true_positives = 0
         latencies = []
         
-        # Match detected drifts to true drifts within tolerance
         matched_true = set()
         for det in detected_drifts:
-            valid_trues = [t for t in true_drifts if abs(det - t) <= tolerance and t not in matched_true]
+            # FIX: Only allow positive latencies (det >= t) to prevent "early" negative matches
+            # If you want to allow early warnings, use: abs(det - t) <= tolerance
+            valid_trues = [t for t in true_drifts if 0 <= (det - t) <= tolerance and t not in matched_true]
+            
             if valid_trues:
-                matched = min(valid_trues, key=lambda t: det - t)
+                # FIX: Use abs() so it correctly finds the closest event
+                matched = min(valid_trues, key=lambda t: abs(det - t))
                 matched_true.add(matched)
                 true_positives += 1
-                latencies.append(det - matched)
+                latencies.append(det - matched)  # This will now always be positive!
                 
         false_positives = len(detected_drifts) - true_positives
         false_negatives = len(true_drifts) - true_positives
